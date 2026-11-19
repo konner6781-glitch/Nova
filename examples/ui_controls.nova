@@ -1,0 +1,14 @@
+get UI
+
+function show_choice(value, status):
+    get UI
+    UI.set_text(status, "Selected: " + str(value))
+
+window = UI.window("Choice controls", 700, 480, {"theme": "dark"})
+column = UI.column(window, {"gap": 14})
+status = UI.text(column, "Change a control")
+UI.dropdown(column, ["Blue", "Green", "Violet"], "Blue", {"on_change": "show_choice", "on_change_args": [status]})
+UI.checkbox(column, "Enable notifications", true, {"on_change": "show_choice", "on_change_args": [status]})
+UI.slider(column, 0, 100, 40, {"step": 5, "on_change": "show_choice", "on_change_args": [status]})
+UI.show(window)
+stop

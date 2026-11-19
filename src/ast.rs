@@ -1,3 +1,4 @@
+use crate::tokens::SourceLocation;
 
 #[derive(Debug, Clone)]
 pub struct Program {
@@ -6,6 +7,11 @@ pub struct Program {
 
 #[derive(Debug, Clone)]
 pub enum Statement {
+    Located {
+        location: SourceLocation,
+        statement: Box<Statement>,
+    },
+
     Variable {
         name: String,
         value: Expression,
@@ -14,6 +20,18 @@ pub enum Statement {
     Assignment {
         name: String,
         operator: AssignmentOperator,
+        value: Expression,
+    },
+
+    IndexAssignment {
+        name: String,
+        indices: Vec<Expression>,
+        operator: AssignmentOperator,
+        value: Expression,
+    },
+
+    UnpackAssignment {
+        names: Vec<String>,
         value: Expression,
     },
 
@@ -56,7 +74,7 @@ pub struct LoopSettings {
     pub delay: Option<Expression>,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AssignmentOperator {
     Assign,
     Add,
@@ -67,6 +85,11 @@ pub enum AssignmentOperator {
 
 #[derive(Debug, Clone)]
 pub enum Expression {
+    Located {
+        location: SourceLocation,
+        expression: Box<Expression>,
+    },
+
     Integer(i64),
 
     Float(f64),
@@ -80,6 +103,16 @@ pub enum Expression {
     List(Vec<Expression>),
 
     Dictionary(Vec<(Expression, Expression)>),
+
+    Index {
+        object: Box<Expression>,
+        index: Box<Expression>,
+    },
+
+    Member {
+        object: Box<Expression>,
+        name: String,
+    },
 
     Unary {
         operator: UnaryOperator,
@@ -98,6 +131,38 @@ pub enum Expression {
     },
 
     Grouped(Box<Expression>),
+}
+
+impl Statement {
+    pub fn unlocated(&self) -> &Statement {
+        match self {
+            Statement::Located { statement, .. } => statement.unlocated(),
+            statement => statement,
+        }
+    }
+
+    pub fn location(&self) -> Option<SourceLocation> {
+        match self {
+            Statement::Located { location, .. } => Some(*location),
+            _ => None,
+        }
+    }
+}
+
+impl Expression {
+    pub fn unlocated(&self) -> &Expression {
+        match self {
+            Expression::Located { expression, .. } => expression.unlocated(),
+            expression => expression,
+        }
+    }
+
+    pub fn location(&self) -> Option<SourceLocation> {
+        match self {
+            Expression::Located { location, .. } => Some(*location),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy)]

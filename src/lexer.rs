@@ -1,4 +1,3 @@
-
 use crate::tokens::{Token, TokenKind};
 
 pub struct Lexer {
@@ -106,38 +105,23 @@ impl Lexer {
                 }
 
                 Some('+') => {
-                    self.read_operator(
-                        TokenKind::Plus,
-                        Some(('=', TokenKind::PlusEqual)),
-                    );
+                    self.read_operator(TokenKind::Plus, Some(('=', TokenKind::PlusEqual)));
                 }
 
                 Some('-') => {
-                    self.read_operator(
-                        TokenKind::Minus,
-                        Some(('=', TokenKind::MinusEqual)),
-                    );
+                    self.read_operator(TokenKind::Minus, Some(('=', TokenKind::MinusEqual)));
                 }
 
                 Some('*') => {
-                    self.read_operator(
-                        TokenKind::Multiply,
-                        Some(('=', TokenKind::MultiplyEqual)),
-                    );
+                    self.read_operator(TokenKind::Multiply, Some(('=', TokenKind::MultiplyEqual)));
                 }
 
                 Some('/') => {
-                    self.read_operator(
-                        TokenKind::Divide,
-                        Some(('=', TokenKind::DivideEqual)),
-                    );
+                    self.read_operator(TokenKind::Divide, Some(('=', TokenKind::DivideEqual)));
                 }
 
                 Some('=') => {
-                    self.read_operator(
-                        TokenKind::Equal,
-                        Some(('=', TokenKind::EqualEqual)),
-                    );
+                    self.read_operator(TokenKind::Equal, Some(('=', TokenKind::EqualEqual)));
                 }
 
                 Some('!') => {
@@ -161,10 +145,7 @@ impl Lexer {
                 }
 
                 Some('<') => {
-                    self.read_operator(
-                        TokenKind::LessThan,
-                        Some(('=', TokenKind::LessEqual)),
-                    );
+                    self.read_operator(TokenKind::LessThan, Some(('=', TokenKind::LessEqual)));
                 }
 
                 Some('>') => {
@@ -199,18 +180,10 @@ impl Lexer {
         while self.indent_stack.len() > 1 {
             self.indent_stack.pop();
 
-            self.add_token_at(
-                TokenKind::Dedent,
-                self.line,
-                self.column,
-            );
+            self.add_token_at(TokenKind::Dedent, self.line, self.column);
         }
 
-        self.add_token_at(
-            TokenKind::Eof,
-            self.line,
-            self.column,
-        );
+        self.add_token_at(TokenKind::Eof, self.line, self.column);
 
         Ok(self.tokens.clone())
     }
@@ -231,7 +204,7 @@ impl Lexer {
             ));
         }
 
-        if matches!(self.peek(), Some('\n') | None | Some('#')) {
+        if matches!(self.peek(), Some('\n' | '\r') | None | Some('#')) {
             return Ok(());
         }
 
@@ -249,27 +222,16 @@ impl Lexer {
 
             self.indent_stack.push(indentation);
 
-            self.add_token_at(
-                TokenKind::Indent,
-                self.line,
-                start_column,
-            );
+            self.add_token_at(TokenKind::Indent, self.line, start_column);
         } else if indentation < current_indent {
             while indentation < *self.indent_stack.last().unwrap() {
                 self.indent_stack.pop();
 
-                self.add_token_at(
-                    TokenKind::Dedent,
-                    self.line,
-                    start_column,
-                );
+                self.add_token_at(TokenKind::Dedent, self.line, start_column);
             }
 
             if indentation != *self.indent_stack.last().unwrap() {
-                return Err(format!(
-                    "Inconsistent indentation at line {}.",
-                    self.line
-                ));
+                return Err(format!("Inconsistent indentation at line {}.", self.line));
             }
         }
 
@@ -287,9 +249,7 @@ impl Lexer {
 
         let mut kind = TokenKind::Integer;
 
-        if self.peek() == Some('.')
-            && self.peek_next().is_some_and(|c| c.is_ascii_digit())
-        {
+        if self.peek() == Some('.') && self.peek_next().is_some_and(|c| c.is_ascii_digit()) {
             kind = TokenKind::Float;
             self.advance();
 
@@ -298,12 +258,7 @@ impl Lexer {
             }
         }
 
-        self.add_token_from(
-            kind,
-            start,
-            start_line,
-            start_column,
-        );
+        self.add_token_from(kind, start, start_line, start_column);
     }
 
     fn read_string(&mut self) -> Result<(), String> {
@@ -318,12 +273,7 @@ impl Lexer {
             if c == quote {
                 self.advance();
 
-                self.add_token_from(
-                    TokenKind::String,
-                    start,
-                    start_line,
-                    start_column,
-                );
+                self.add_token_from(TokenKind::String, start, start_line, start_column);
 
                 return Ok(());
             }
@@ -336,11 +286,27 @@ impl Lexer {
             }
 
             if c == '\\' {
+                let escape_line = self.line;
+                let escape_column = self.column;
                 self.advance();
-
-                if self.peek().is_none() {
-                    break;
+                match self.peek() {
+                    Some('n' | 't' | 'r' | '\\' | '"' | '\'') => {
+                        self.advance();
+                    }
+                    Some(escaped) => {
+                        return Err(format!(
+                            "Unsupported escape sequence '\\{}' at line {}, column {}.",
+                            escaped, escape_line, escape_column
+                        ));
+                    }
+                    None => {
+                        return Err(format!(
+                            "Unterminated escape sequence at line {}, column {}.",
+                            escape_line, escape_column
+                        ));
+                    }
                 }
+                continue;
             }
 
             self.advance();
@@ -357,15 +323,11 @@ impl Lexer {
         let start_line = self.line;
         let start_column = self.column;
 
-        while self.peek().is_some_and(|c| {
-            c.is_alphanumeric() || c == '_'
-        }) {
+        while self.peek().is_some_and(|c| c.is_alphanumeric() || c == '_') {
             self.advance();
         }
 
-        let text: String = self.source[start..self.current]
-            .iter()
-            .collect();
+        let text: String = self.source[start..self.current].iter().collect();
 
         let kind = match text.as_str() {
             "true" | "false" => TokenKind::Boolean,
@@ -393,19 +355,10 @@ impl Lexer {
             _ => TokenKind::Identifier,
         };
 
-        self.add_token_from(
-            kind,
-            start,
-            start_line,
-            start_column,
-        );
+        self.add_token_from(kind, start, start_line, start_column);
     }
 
-    fn read_operator(
-        &mut self,
-        normal_kind: TokenKind,
-        compound: Option<(char, TokenKind)>,
-    ) {
+    fn read_operator(&mut self, normal_kind: TokenKind, compound: Option<(char, TokenKind)>) {
         let start = self.current;
         let start_line = self.line;
         let start_column = self.column;
@@ -423,12 +376,7 @@ impl Lexer {
             normal_kind
         };
 
-        self.add_token_from(
-            kind,
-            start,
-            start_line,
-            start_column,
-        );
+        self.add_token_from(kind, start, start_line, start_column);
     }
 
     fn single_char(&mut self, kind: TokenKind) {
@@ -438,12 +386,7 @@ impl Lexer {
 
         self.advance();
 
-        self.add_token_from(
-            kind,
-            start,
-            line,
-            column,
-        );
+        self.add_token_from(kind, start, line, column);
     }
 
     fn skip_comment(&mut self) {
@@ -452,37 +395,15 @@ impl Lexer {
         }
     }
 
-    fn add_token_from(
-        &mut self,
-        kind: TokenKind,
-        start: usize,
-        line: usize,
-        column: usize,
-    ) {
-        let lexeme: String = self.source[start..self.current]
-            .iter()
-            .collect();
+    fn add_token_from(&mut self, kind: TokenKind, start: usize, line: usize, column: usize) {
+        let lexeme: String = self.source[start..self.current].iter().collect();
 
-        self.tokens.push(Token::new(
-            kind,
-            lexeme,
-            line,
-            column,
-        ));
+        self.tokens.push(Token::new(kind, lexeme, line, column));
     }
 
-    fn add_token_at(
-        &mut self,
-        kind: TokenKind,
-        line: usize,
-        column: usize,
-    ) {
-        self.tokens.push(Token::new(
-            kind,
-            String::new(),
-            line,
-            column,
-        ));
+    fn add_token_at(&mut self, kind: TokenKind, line: usize, column: usize) {
+        self.tokens
+            .push(Token::new(kind, String::new(), line, column));
     }
 
     fn advance(&mut self) -> Option<char> {

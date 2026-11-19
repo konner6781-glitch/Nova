@@ -1,0 +1,8 @@
+items = [1, 2, 3]
+items[1] += 5
+
+settings = {"enabled": false}
+settings["enabled"] = items[1] == 7
+
+print(items, settings)
+stop

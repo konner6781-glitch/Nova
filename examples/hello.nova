@@ -1,2 +1,2 @@
-#nova hello message
 print("Hello from Nova!")
+stop

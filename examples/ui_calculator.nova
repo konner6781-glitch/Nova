@@ -1,0 +1,17 @@
+get UI
+
+function add_numbers(left_field, right_field, result):
+    get UI
+    left = int(UI.value(left_field))
+    right = int(UI.value(right_field))
+    UI.set_text(result, "Result: " + str(left + right))
+
+window = UI.window("Nova calculator", 620, 420)
+column = UI.column(window, {"gap": 12})
+UI.text(column, "Add two numbers", {"font_size": 25, "font_weight": "bold"})
+left_field = UI.input(column, "0", {"placeholder": "First number"})
+right_field = UI.input(column, "0", {"placeholder": "Second number"})
+result = UI.text(column, "Result: 0", {"font_size": 20})
+UI.button(column, "Add", {"on_click": "add_numbers", "on_click_args": [left_field, right_field, result]})
+UI.show(window)
+stop

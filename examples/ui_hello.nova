@@ -1,0 +1,8 @@
+get UI
+
+window = UI.window("Hello Nova", 720, 460)
+column = UI.column(window, {"gap": 14})
+UI.text(column, "Hello from Nova", {"font_size": 30, "font_weight": "bold"})
+UI.text(column, "A native desktop window powered by Nova.", {"color": "#68738a"})
+UI.show(window)
+stop

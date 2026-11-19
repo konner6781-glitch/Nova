@@ -1,0 +1,36 @@
+:root {
+  color-scheme: light;
+  font-family: "Segoe UI Variable", "Segoe UI", Inter, system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  --bg: #f4f6fb;
+  --surface: #ffffff;
+  --text: #202635;
+  --muted: #697386;
+  --border: #dfe4ed;
+  --accent: #5b62e8;
+  --accent-hover: #484fc8;
+  --focus: #9298ff;
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-width: 240px; min-height: 100vh; background: var(--bg); color: var(--text); }
+#app { min-height: 100vh; padding: 24px; display: flex; flex-direction: column; gap: 14px; }
+.nova-column, .nova-row, .nova-container { min-width: 0; }
+.nova-column { display: flex; flex-direction: column; gap: 12px; }
+.nova-row { display: flex; flex-direction: row; align-items: center; flex-wrap: wrap; gap: 12px; }
+.nova-container { display: flex; flex-direction: column; gap: 12px; padding: 16px; border-radius: 14px; background: var(--surface); border: 1px solid var(--border); }
+.nova-text { margin: 0; color: var(--text); line-height: 1.5; white-space: pre-wrap; overflow-wrap: anywhere; }
+button, input, select { font: inherit; color: inherit; }
+.nova-button { min-height: 40px; padding: 9px 16px; border: 0; border-radius: 10px; background: var(--accent); color: #fff; font-weight: 600; cursor: pointer; transition: background .15s ease, transform .15s ease, opacity .15s ease; }
+.nova-button:hover:not(:disabled) { background: var(--accent-hover); transform: translateY(-1px); }
+.nova-button:active:not(:disabled) { transform: translateY(0); }
+.nova-input, .nova-dropdown { width: 100%; min-height: 42px; padding: 9px 12px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface); outline: none; }
+.nova-input:focus, .nova-dropdown:focus { border-color: var(--focus); box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 22%, transparent); }
+.nova-checkbox { display: inline-flex; align-items: center; gap: 10px; min-height: 36px; cursor: pointer; color: var(--text); }
+.nova-checkbox input { width: 17px; height: 17px; accent-color: var(--accent); }
+.nova-slider { width: 100%; accent-color: var(--accent); }
+.nova-image { display: block; max-width: 100%; height: auto; object-fit: contain; border-radius: 10px; }
+:disabled { cursor: not-allowed !important; opacity: .55; }
+[hidden] { display: none !important; }
+body[data-theme="dark"] { color-scheme: dark; --bg: #141821; --surface: #1d2330; --text: #edf0f7; --muted: #a5afc0; --border: #343c4d; --accent: #858aff; --accent-hover: #7379ec; --focus: #9298ff; }
+@media (max-width: 600px) { #app { padding: 16px; } .nova-row { align-items: stretch; } }

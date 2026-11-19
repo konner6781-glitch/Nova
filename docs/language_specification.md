@@ -1,8 +1,13 @@
 # Nova — Language Specification
 
-**Version:** 0.2 — Language Design  
+**Design document revision:** 0.2
+**Cargo package version:** 0.1.0
 **Status:** In Development  
 **Language:** Nova
+
+This document records Nova's confirmed language design. It does not imply that
+every feature is executable yet; current implementation status is tracked in
+[the roadmap](roadmap.md).
 
 ---
 
@@ -43,7 +48,7 @@ is_active = true
 
 ## 2.2 Built-in Data Types
 
-Nova initially supports four fundamental data types:
+Nova currently supports six source-level data types:
 
 | Type | Description | Example |
 |---|---|---|
@@ -51,26 +56,22 @@ Nova initially supports four fundamental data types:
 | `Float` | Decimal numbers | `15.5` |
 | `String` | Text | `"Hello"` |
 | `Bool` | True or false values | `true` |
+| `List` | Ordered collection of values | `[1, "two"]` |
+| `Dictionary` | Key/value collection | `{"active": true}` |
+
+The VM also uses an internal `None` result for operations that do not return a
+value. `None` is not currently a source literal.
 
 ## 2.3 Variable Reassignment
 
-Variables can be reassigned as long as the new value matches their existing data type.
+Variables are fully dynamic. Reassigning a variable replaces its value and may
+change its type.
 
-```nova
-x = 15
-x = 20
-```
+    x = 15
+    x = "fifteen"
+    x = true
 
-Changing a variable's data type requires an explicit conversion.
-
-```nova
-x = 15
-x = str("hello")
-```
-
-After conversion, `x` becomes a String variable.
-
-Assigning a different data type without explicitly converting it must produce a type error.
+Explicit conversion is not required to change a variable's type.
 
 ## 2.4 Type Conversion
 
@@ -81,14 +82,22 @@ Nova provides four lowercase conversion functions:
 - `str()` — converts a value to a string.
 - `bool()` — converts a value to a boolean.
 
-Example:
+Each function takes one argument. The runtime reports an error when a value
+cannot be converted. `int()` accepts integers, finite in-range floats
+(truncated toward zero), parseable integer strings, and Booleans (`true` is 1,
+`false` is 0). `float()` accepts integers, finite floats, parseable finite
+float strings, and Booleans (`1.0` or `0.0`). `str()` returns the runtime
+display form. `bool()` accepts values using Nova truthiness: zero, empty
+strings, empty lists/dictionaries, and internal `None` are false; nonzero
+numbers, nonempty values, functions, and UI handles are true. Non-finite floats
+are rejected.
 
-```nova
-age = 15
-age = str("fifteen")
-```
+## 2.5 String escapes
 
-Conversion functions must use lowercase names.
+String literals decode these escapes once: `\n` for a newline, `\t` for a
+tab, `\r` for carriage return, `\\` for a backslash, and `\"` or `\'`
+for quotes. Any other escape sequence is a lexer error with a source location.
+An unescaped line break before the closing quote is also an error.
 
 # 3. Program Termination
 
@@ -112,7 +121,7 @@ stop
 4. No statements may appear after `stop`.
 5. `stop` is a reserved keyword and cannot be used as a variable or function name.
 
-The interpreter must validate these rules before executing the program.
+The parser validates these rules before compilation or execution.
 
 # 4. Code Blocks and Indentation
 
@@ -263,15 +272,34 @@ The delay is measured in seconds.
 
 The first iteration begins immediately; delays occur between iterations rather than before the first iteration.
 
-## 6.5 Loop Rules
+## 6.5 Iteration Limits and Exiting a Loop
+
+A repeat loop may include a maximum iteration count. A condition combined with
+a maximum count is written with a comma:
+
+    loop.repeat x < 10, 5:
+        x += 1
+
+The condition is checked before each iteration, and the loop cannot exceed the
+maximum count. A semicolon separates a condition from the maximum count when a
+delay is also specified:
+
+    loop.repeat x < 10; 5, delay(1):
+        x += 1
+
+`break` exits the innermost active loop.
+
+## 6.6 Loop Rules
 
 1. `loop:` creates an unconditional continuous loop.
 2. `loop.repeat` accepts either a numeric repetition count or a condition.
 3. Numeric repetition executes the block the specified number of times.
 4. Conditional repetition checks its condition before each iteration.
-5. An optional delay can be supplied to `loop.repeat`.
-6. Loop bodies use indentation.
-7. A loop-exit mechanism will be provided to stop loops.
+5. A repeat loop may also set a maximum iteration count.
+6. An optional delay can be supplied to `loop.repeat`; it applies between
+   iterations, beginning after the first iteration.
+7. `break` exits the innermost active loop.
+8. Loop bodies use indentation.
 
 # 7. Functions
 
@@ -351,9 +379,9 @@ Example:
 function add(a, b):
     equation = str(a) + " + " + str(b)
     result = a + b
-    rounded_result = round(result, 2)
+    triple_result = result * 3
 
-    return(equation, result, rounded_result)
+    return(equation, result, triple_result)
 ```
 
 A function can return one value, multiple values, or no values.
@@ -421,6 +449,11 @@ Functions receive external values through their parameters.
 
 Functions should not automatically access variables from outside their own scope. External values should be passed through parameters.
 
+Parameters, local assignments, and imports form the function's local scope.
+Globals and module bindings do not implicitly pass into a function. A function
+that uses `Math`, `UI`, or another module must bind it inside the function with
+`get` or receive needed values through parameters.
+
 ## 7.7 Function Rules
 
 1. Functions are declared using the lowercase `function` keyword.
@@ -431,11 +464,68 @@ Functions should not automatically access variables from outside their own scope
 6. Variables created inside functions are local.
 7. Functions use indentation for their bodies.
 
-# 8. Standard Library
+# 8. Expressions and Collections
 
-Nova is intended to provide extensive built-in functionality through its standard library.
+## 8.1 Operators and numeric behavior
 
-Planned modules include:
+In increasing precedence, expressions support `or`, `and`, equality and
+ordered comparisons, `+` / `-`, `*` / `/`, and unary `not` / `-`. Parentheses
+can group expressions. `and` and `or` short-circuit and produce `Bool` values.
+The VM handles modulo and power bytecode instructions, but `%` and `^` are not
+currently Nova source operators and the compiler does not emit those
+instructions.
+
+Integer addition, subtraction, multiplication, and negation report overflow.
+Mixed integer/float arithmetic produces a `Float`; `/` always produces a
+`Float` and errors on zero. Non-finite float literals and results are errors.
+Ordered numeric comparisons handle mixed `Int` / `Float` values without first
+rounding large integers to floats. Equality is type-sensitive (`1 != 1.0`).
+
+## 8.2 Collections
+
+Lists and dictionaries can be indexed with square brackets. List indexes are
+zero-based, nonnegative integers and must refer to an existing element.
+Dictionary indexes use runtime values as keys. Reading a missing dictionary
+key is an error; assigning to a missing key creates it.
+
+Indexes may be chained to read or update nested collections:
+
+```nova
+items = [[1, 2]]
+items[0][1] += 3
+settings = {"active": false}
+settings["active"] = items[0][1] > 3
+```
+
+Compound assignment supports `+=`, `-=`, `*=`, and `/=` on an indexed value.
+Negative list indexes, slicing, and append operations are not currently
+provided.
+
+Dictionary keys may be values of any type. Repeating a key replaces its value
+with the last assigned value; its original insertion position is retained.
+Dictionary equality ignores insertion order and compares keys and values
+recursively, while value equality remains type-sensitive. Missing dictionary
+reads and invalid list indexes produce runtime errors.
+
+# 9. Standard Library
+
+Nova provides built-in modules through the `get` and `from … get` forms.
+
+| Module | Current exports |
+|---|---|
+| `Math` | `pi`, `e`, `tau`, `abs`, `sqrt`, `sin`, `cos`, `tan`, `floor`, `ceil`, `round`, `min`, `max`, `pow` |
+| `Time` | `now`, `unix`, `sleep`, `sleep_ms` |
+| `String` | `upper`, `lower`, `trim`, `contains`, `replace`, `split`, `join` |
+| `Collections` | `len`, `contains`, `keys`, `values` |
+| `UI` | Experimental Windows desktop windows and controls; requires WebView2 |
+
+Nova source modules and additional standard-library modules are planned. `get`
+currently resolves built-in modules or values registered by an embedding Rust
+host; it does not load `.nova` files. The Rust VM can also register module
+values for embedding applications. See [the standard-library reference](standard_library.md)
+for signatures and errors.
+
+Other planned modules include:
 
 | Module | Intended Purpose |
 |---|---|
@@ -443,38 +533,18 @@ Planned modules include:
 | `Program` | Program and application information |
 | `System` | Operating system functionality |
 | `Network` | Networking functionality |
-| `UI` | User interface creation |
-| `Math` | Mathematical operations |
-| `Time` | Time and date functionality |
-| `Collections` | Lists, dictionaries, and other collections |
-| `String` | Text manipulation |
 
-These are planned modules and may not all be available in the initial implementation.
+# 10. Implementation Status and Future Development
 
-# 9. Future Development
+Nova currently has a Rust lexer, parser, bytecode compiler, virtual machine, and
+command-line runner. It also retains a partial AST runtime helper. The compiler
+and VM are the complete primary execution path. Cargo package version `0.1.0`
+is separate from this specification's design revision `0.2`.
 
-Nova will initially be developed as an interpreted language.
-
-The initial implementation will focus on:
-
-- Lexer and token recognition.
-- Parser and syntax validation.
-- Interpreter and program execution.
-- Fundamental data types.
-- Variables and type conversion.
-- Conditional statements.
-- Loops.
-- Functions and return values.
-- Standard library foundations.
-
-Future development may include:
-
-- Compilation support.
-- Third-party libraries.
-- Native extensions.
-- Advanced data structures.
-- Object-oriented programming.
-- Additional performance optimizations.
+Planned development includes source-module loading, additional standard-library
+modules, native extensions, object-oriented programming, distribution packages,
+and measured performance improvements. UI support exists in an experimental
+Windows-only form; see the roadmap for its current boundaries.
 
 The specification will evolve as additional language-design decisions are made.
 

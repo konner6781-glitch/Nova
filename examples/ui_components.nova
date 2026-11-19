@@ -1,0 +1,13 @@
+get UI
+
+function clicked(status):
+    get UI
+    UI.set_text(status, "The button was clicked")
+
+window = UI.window("Nova components", 760, 520, {"theme": "light"})
+column = UI.column(window, {"gap": 16})
+status = UI.text(column, "Click the button", {"font_size": 20})
+UI.button(column, "Update status", {"on_click": "clicked", "on_click_args": [status]})
+UI.input(column, "", {"placeholder": "A text input"})
+UI.show(window)
+stop

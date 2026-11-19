@@ -1,0 +1,19 @@
+get Math
+get Time
+get String
+get Collections
+from Math get sqrt
+
+root = Math.sqrt(81)
+same_root = sqrt(25)
+rounded = Math.round(3.5)
+label = String.upper("nova")
+words = String.split("math,time,string", ",")
+joined = String.join(" | ", words)
+count = Collections.len(words)
+has_time = Collections.contains(words, "time")
+timestamp = Time.unix()
+Time.sleep_ms(0)
+
+print(root, same_root, rounded, label, joined, count, has_time)
+stop

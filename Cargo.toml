@@ -3,5 +3,15 @@
 name = "nova"
 version = "0.1.0"
 edition = "2024"
+rust-version = "1.85"
 
 [dependencies]
+serde_json = "1"
+sha2 = "0.10.9"
+reqwest = { version = "0.12.25", default-features = false, features = ["blocking", "rustls-tls"] }
+image = { version = "=0.25.9", default-features = false, features = ["png", "jpeg", "webp", "bmp"] }
+zip = { version = "2.4.2", default-features = false, features = ["deflate"] }
+
+[target.'cfg(windows)'.dependencies]
+tao = "0.37"
+wry = "0.57"

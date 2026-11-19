@@ -1,0 +1,16 @@
+get UI
+
+function close_note():
+    print("A Nova window was closed")
+
+main = UI.window("Main window", 680, 420, {"on_close": "close_note"})
+main_column = UI.column(main, {"gap": 12})
+UI.text(main_column, "This window has its own component tree")
+
+help = UI.window("Second window", 520, 320, {"theme": "dark"})
+help_column = UI.column(help, {"gap": 12})
+UI.text(help_column, "A second independent Nova window")
+
+UI.show(main)
+UI.show(help)
+stop

@@ -1,4 +1,3 @@
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TokenKind {
     // Values
@@ -79,13 +78,14 @@ pub struct Token {
     pub column: usize,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct SourceLocation {
+    pub line: usize,
+    pub column: usize,
+}
+
 impl Token {
-    pub fn new(
-        kind: TokenKind,
-        lexeme: String,
-        line: usize,
-        column: usize,
-    ) -> Self {
+    pub fn new(kind: TokenKind, lexeme: String, line: usize, column: usize) -> Self {
         Self {
             kind,
             lexeme,

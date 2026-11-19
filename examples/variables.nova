@@ -1,0 +1,6 @@
+age = 15
+age = "fifteen"
+active = true
+
+print(age, active)
+stop

@@ -1,0 +1,18 @@
+get UI
+
+function submit_name(name_field, status):
+    get UI
+    name = UI.value(name_field)
+    if name == "":
+        UI.set_text(status, "Please enter a name")
+    else:
+        UI.set_text(status, "Saved: " + name)
+
+window = UI.window("Profile form", 680, 440)
+column = UI.column(window, {"gap": 14})
+UI.text(column, "Create a profile", {"font_size": 26, "font_weight": "bold"})
+status = UI.text(column, "Enter your name below")
+name_field = UI.input(column, "", {"placeholder": "Your name"})
+UI.button(column, "Save profile", {"on_click": "submit_name", "on_click_args": [name_field, status]})
+UI.show(window)
+stop

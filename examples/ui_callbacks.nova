@@ -1,0 +1,12 @@
+get UI
+
+function echo_input(value, output):
+    get UI
+    UI.set_text(output, "You typed: " + value)
+
+window = UI.window("Nova event callbacks", 700, 420)
+column = UI.column(window, {"gap": 12})
+output = UI.text(column, "Type in the field to send a Nova callback")
+UI.input(column, "", {"placeholder": "Type here", "on_change": "echo_input", "on_change_args": [output]})
+UI.show(window)
+stop

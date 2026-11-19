@@ -1,0 +1,16 @@
+get UI
+
+function increment(count_input, result_label):
+    get UI
+    count = int(UI.value(count_input))
+    count += 1
+    UI.set_value(count_input, str(count))
+    UI.set_text(result_label, "Current count: " + str(count))
+
+window = UI.window("Live component updates", 640, 400)
+column = UI.column(window, {"gap": 14})
+result = UI.text(column, "Current count: 0")
+count = UI.input(column, "0", {"placeholder": "Count"})
+button = UI.button(column, "Add one", {"on_click": "increment", "on_click_args": [count, result]})
+UI.show(window)
+stop
